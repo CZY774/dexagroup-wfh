@@ -12,7 +12,7 @@ COPY apps/attendance-service/package.json ./apps/attendance-service/package.json
 COPY apps/api-gateway/package.json ./apps/api-gateway/package.json
 COPY frontend/package.json ./frontend/package.json
 
-RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=120000
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm npm ci --prefer-offline --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=120000
 
 COPY docker ./docker
 COPY packages ./packages
