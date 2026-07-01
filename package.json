@@ -1,0 +1,44 @@
+{
+  "name": "dexa-wfh-attendance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dexa Group fullstack technical test: WFH attendance app with React, NestJS microservices, and MySQL.",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build -w @dexa/contracts && npm run build -w @dexa/auth-service && npm run build -w @dexa/employee-service && npm run build -w @dexa/attendance-service && npm run build -w @dexa/api-gateway && npm run build -w @dexa/frontend",
+    "build:backend": "npm run build -w @dexa/contracts && npm run build -w @dexa/auth-service && npm run build -w @dexa/employee-service && npm run build -w @dexa/attendance-service && npm run build -w @dexa/api-gateway",
+    "dev:gateway": "npm run start:dev -w @dexa/api-gateway",
+    "dev:auth": "npm run start:dev -w @dexa/auth-service",
+    "dev:employee": "npm run start:dev -w @dexa/employee-service",
+    "dev:attendance": "npm run start:dev -w @dexa/attendance-service",
+    "dev:frontend": "npm run dev -w @dexa/frontend",
+    "typecheck": "npm run typecheck -w @dexa/frontend",
+    "test:backend": "npm run build -w @dexa/contracts && node --test -r ./test/register-ts-node.cjs apps/auth-service/src/auth.service.spec.ts apps/employee-service/src/employee.service.spec.ts apps/attendance-service/src/attendance.service.spec.ts apps/api-gateway/src/common/roles.guard.spec.ts apps/api-gateway/src/common/rate-limit.guard.spec.ts apps/api-gateway/src/common/csrf.guard.spec.ts apps/api-gateway/src/employees/employees.controller.spec.ts",
+    "test": "npm run test:backend",
+    "verify": "npm audit --omit=dev && npm run build && npm run test"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "overrides": {
+    "@nestjs/common": "11.1.27",
+    "@nestjs/core": "11.1.27",
+    "@nestjs/microservices": "11.1.27",
+    "@nestjs/platform-express": "11.1.27",
+    "body-parser": "2.3.0",
+    "express": "5.2.1",
+    "file-type": "21.3.4",
+    "multer": "2.2.0",
+    "qs": "6.15.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}

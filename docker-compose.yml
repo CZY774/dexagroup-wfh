@@ -1,0 +1,151 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_USER: ${MYSQL_USER:-dexa_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dexa_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P 3306 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
+      args:
+        WORKSPACE: "@dexa/auth-service"
+    environment:
+      NODE_ENV: development
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_USER:-dexa_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dexa_password}
+      DB_DATABASE: ${AUTH_DB_NAME:-dexa_auth}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-long-random-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@dexa.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin12345!}
+      AUTH_SERVICE_HOST: 0.0.0.0
+      AUTH_SERVICE_PORT: 3101
+      TYPEORM_SYNC: ${TYPEORM_SYNC:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "docker/healthcheck.js", "127.0.0.1", "3101"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  employee-service:
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
+      args:
+        WORKSPACE: "@dexa/employee-service"
+    environment:
+      NODE_ENV: development
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_USER:-dexa_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dexa_password}
+      DB_DATABASE: ${EMPLOYEE_DB_NAME:-dexa_employee}
+      EMPLOYEE_SERVICE_HOST: 0.0.0.0
+      EMPLOYEE_SERVICE_PORT: 3102
+      TYPEORM_SYNC: ${TYPEORM_SYNC:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "docker/healthcheck.js", "127.0.0.1", "3102"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  attendance-service:
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
+      args:
+        WORKSPACE: "@dexa/attendance-service"
+    environment:
+      NODE_ENV: development
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_USER:-dexa_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dexa_password}
+      DB_DATABASE: ${ATTENDANCE_DB_NAME:-dexa_attendance}
+      ATTENDANCE_SERVICE_HOST: 0.0.0.0
+      ATTENDANCE_SERVICE_PORT: 3103
+      PROOF_STORAGE_DRIVER: ${PROOF_STORAGE_DRIVER:-local}
+      UPLOAD_DIR: /app/uploads/attendance
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-2097152}
+      MAX_LOCATION_ACCURACY_METERS: ${MAX_LOCATION_ACCURACY_METERS:-500}
+      TYPEORM_SYNC: ${TYPEORM_SYNC:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - attendance_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "docker/healthcheck.js", "127.0.0.1", "3103"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
+      args:
+        WORKSPACE: "@dexa/api-gateway"
+    environment:
+      NODE_ENV: development
+      API_GATEWAY_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-long-random-secret}
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_PORT: 3101
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_SERVICE_PORT: 3102
+      ATTENDANCE_SERVICE_HOST: attendance-service
+      ATTENDANCE_SERVICE_PORT: 3103
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-2097152}
+      MAX_LOCATION_ACCURACY_METERS: ${MAX_LOCATION_ACCURACY_METERS:-500}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173,http://127.0.0.1:5173}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-dexa_access_token}
+      CSRF_COOKIE_NAME: ${CSRF_COOKIE_NAME:-dexa_csrf_token}
+      AUTH_COOKIE_MAX_AGE_SECONDS: ${AUTH_COOKIE_MAX_AGE_SECONDS:-28800}
+      CSRF_COOKIE_MAX_AGE_SECONDS: ${CSRF_COOKIE_MAX_AGE_SECONDS:-28800}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-lax}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+      attendance-service:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "docker/healthcheck.js", "127.0.0.1", "4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  attendance_uploads:

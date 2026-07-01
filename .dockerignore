@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+coverage
+uploads
+frontend/dist
+.env
+.git
+*.log
+mysql/data
