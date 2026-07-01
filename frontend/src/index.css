@@ -162,6 +162,17 @@ a:focus-visible {
   display: none;
 }
 
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sidebar-close-button {
+  display: none;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -790,8 +801,8 @@ td:nth-child(4) .skeleton-line {
     min-height: 66px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    justify-content: flex-start;
+    gap: 12px;
     padding: 12px 18px;
     background: #ffffff;
     border-bottom: 1px solid var(--border);
@@ -799,6 +810,21 @@ td:nth-child(4) .skeleton-line {
 
   .mobile-menu-button {
     flex: 0 0 auto;
+  }
+
+  .mobile-topbar .brand-block {
+    min-width: 0;
+  }
+
+  .mobile-topbar .brand-block div {
+    min-width: 0;
+  }
+
+  .mobile-topbar .brand-block strong,
+  .mobile-topbar .brand-block span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mobile-nav-backdrop {
@@ -828,6 +854,11 @@ td:nth-child(4) .skeleton-line {
 
   .sidebar.is-open {
     transform: translateX(0);
+  }
+
+  .sidebar-close-button {
+    display: inline-flex;
+    flex: 0 0 auto;
   }
 
   .nav-list {
