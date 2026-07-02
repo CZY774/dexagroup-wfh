@@ -18,6 +18,8 @@ The frontend calls only the API Gateway. The gateway communicates with the inter
 
 In Docker Compose, only MySQL and the API Gateway are published to the host. The internal TCP services stay inside the Docker network and are reached by the gateway through service names.
 
+For proof photos, MySQL stores only attendance metadata such as `proof_path`, `stored_filename`, MIME type, file size, timestamp, and location. The actual image file is stored by `attendance-service` through a storage abstraction: local disk with a Docker named volume for local development, and S3-compatible private object storage such as Railway Bucket for production.
+
 ## Database Choice
 
 The original test allows several database engines and explicitly prefers Oracle or MySQL. This implementation intentionally uses MySQL because it satisfies that preference while keeping the project easy for a reviewer to run locally through Docker. The application data is naturally relational: users, employees, attendance records, unique employee numbers, unique emails, role constraints, active flags, monitoring indexes, and the one-attendance-per-employee-per-date rule all map cleanly to MySQL tables, constraints, and indexes.
@@ -54,7 +56,7 @@ For the microservice demonstration, each service owns its own logical database: 
 - Basic API security headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and a strict CSP for API responses.
 - Upload validation for size, allowed MIME types, and proof-photo magic bytes.
 - Generated proof-photo filenames and protected proof-photo access.
-- Local proof-photo storage for Docker development and S3-compatible private bucket support for production.
+- Local proof-photo storage for Docker development and S3-compatible private Railway Bucket support for production.
 
 The rate limiter is intentionally local in-memory code to avoid adding deployment dependencies for this technical test. For production or multi-instance API Gateway deployments, move rate-limit counters to Redis, a reverse proxy, or a managed edge gateway.
 
@@ -272,7 +274,23 @@ MySQL is used because the test explicitly prefers MySQL or Oracle, and MySQL giv
 
 NestJS TCP transport is used between the gateway and services. This shows a real NestJS microservices concept without adding RabbitMQ, Kafka, or Kubernetes complexity that is not justified for a 3 to 5 day technical test.
 
-Proof photos are stored on local disk by `attendance-service`. The gateway accepts multipart upload, validates basic file type and size, then forwards the file payload to the attendance service. Production storage would normally use object storage, but local disk is acceptable and easier to review for this assessment.
+Proof photos are stored by `attendance-service` through a small storage abstraction. Docker development uses local disk at `/app/uploads/attendance` backed by the `attendance_uploads` Docker named volume, so normal local restarts keep uploaded proof photos. Production must use S3-compatible object storage such as Railway Bucket through `PROOF_STORAGE_DRIVER=s3`; local container filesystem is not acceptable for production proof photos because a redeploy or restart can remove files while MySQL metadata remains.
+
+In production, the intended data split is:
+
+```text
+MySQL:
+- users
+- employees
+- attendance_records
+- proof metadata, location, and timestamps
+
+Railway Bucket or S3-compatible storage:
+- binary proof photo objects
+- example key: attendance-proofs/2026-07-02/<uuid>.jpg
+```
+
+If an attendance record was created while production still used local container storage, the database row can remain after the container file disappears. That old image cannot be reconstructed from MySQL. The clean demo path is to delete or ignore the stale record and submit a new attendance after bucket storage is configured.
 
 Database schema is created explicitly from `mysql/init.sql` when the MySQL container is initialized. `TYPEORM_SYNC=false` is the default so services do not mutate database schema at runtime. `TYPEORM_SYNC=true` can still be used as a local emergency shortcut, but it is not the recommended review path.
 
