@@ -1,7 +1,7 @@
 import { ImageUp, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { formatBytes } from '../lib/format';
-import { compressProofPhoto } from '../lib/imageCompression';
+import { compressProofPhoto, ImageCompressionError } from '../lib/imageCompression';
 
 type PhotoUploaderProps = {
   file: File | null;
@@ -13,6 +13,7 @@ export function PhotoUploader({ file, onChange, disabled = false }: PhotoUploade
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
   const [compressionNote, setCompressionNote] = useState<string | null>(null);
+  const [compressionError, setCompressionError] = useState<string | null>(null);
   const selectionIdRef = useRef(0);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function PhotoUploader({ file, onChange, disabled = false }: PhotoUploade
     selectionIdRef.current = selectionId;
     setOptimizing(true);
     setCompressionNote('Optimizing photo');
+    setCompressionError(null);
 
     try {
       const result = await compressProofPhoto(selectedFile);
@@ -57,13 +59,14 @@ export function PhotoUploader({ file, onChange, disabled = false }: PhotoUploade
           ? `Optimized ${formatBytes(result.originalSize)} to ${formatBytes(result.compressedSize)}`
           : `Photo size ${formatBytes(result.compressedSize)}`,
       );
-    } catch {
+    } catch (error) {
       if (selectionIdRef.current !== selectionId) {
         return;
       }
 
-      onChange(selectedFile);
-      setCompressionNote(`Photo size ${formatBytes(selectedFile.size)}`);
+      onChange(null);
+      setCompressionNote(null);
+      setCompressionError(error instanceof ImageCompressionError ? error.message : 'Unable to optimize proof photo. Choose another image.');
     } finally {
       if (selectionIdRef.current === selectionId) {
         setOptimizing(false);
@@ -75,6 +78,7 @@ export function PhotoUploader({ file, onChange, disabled = false }: PhotoUploade
     selectionIdRef.current += 1;
     setOptimizing(false);
     setCompressionNote(null);
+    setCompressionError(null);
     onChange(null);
   }
 
@@ -93,6 +97,7 @@ export function PhotoUploader({ file, onChange, disabled = false }: PhotoUploade
       </label>
 
       {compressionNote && <span className="form-note photo-meta" aria-live="polite">{compressionNote}</span>}
+      {compressionError && <div className="alert is-error compact-alert" role="alert">{compressionError}</div>}
 
       {previewUrl && (
         <div className="photo-preview">
