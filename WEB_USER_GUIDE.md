@@ -251,17 +251,21 @@ Attendance
 
 Select a proof photo. On supported mobile browsers, the file picker can open the device camera because the uploader includes a camera capture hint.
 
+Modern phone camera photos can be large. The app optimizes supported photos before upload, so a raw camera photo around 6-12 MB can still be accepted as long as it can be compressed successfully.
+
 Allowed file types:
 
 - JPEG
 - PNG
 - WEBP
 
-Maximum upload size:
+Maximum backend upload size after optimization:
 
 ```text
 2 MB
 ```
+
+The frontend targets about 1.5 MB before upload. If a selected photo is still too large after optimization, choose a smaller image or retake the photo closer to the subject.
 
 Optional:
 
@@ -386,12 +390,12 @@ Expected result:
 Proof photo must be a JPEG, PNG, or WEBP image.
 ```
 
-Try uploading a file larger than 2 MB.
+Try uploading a file that is still larger than 2 MB after frontend optimization, or choose an unsupported/extreme image that cannot be optimized.
 
 Expected result:
 
 ```text
-Proof photo must be smaller than 2 MB.
+The frontend shows a photo optimization error, or the backend returns: Proof photo must be smaller than 2 MB.
 ```
 
 Try submitting attendance twice on the same business date.
