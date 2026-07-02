@@ -340,6 +340,33 @@ a:focus-visible {
   min-height: 112px;
 }
 
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 40px;
+  min-height: 40px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #68717f;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: var(--brand-strong);
+  background: var(--canvas-muted);
+}
+
 .field-error {
   color: var(--danger);
 }
@@ -396,6 +423,11 @@ a:focus-visible {
   border-left: 4px solid transparent;
   padding: 11px 12px;
   font-weight: 700;
+}
+
+.compact-alert {
+  padding: 9px 10px;
+  font-size: 13px;
 }
 
 .alert.is-error {
@@ -850,7 +882,13 @@ td:nth-child(4) .skeleton-line {
     z-index: 1100;
     width: min(304px, calc(100vw - 48px));
     height: 100vh;
-    padding: 18px;
+    height: 100dvh;
+    max-height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 20px;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    overflow-y: auto;
     transform: translateX(-104%);
     transition: transform 160ms ease;
     box-shadow: 18px 0 50px rgba(25, 29, 35, 0.18);
@@ -867,6 +905,13 @@ td:nth-child(4) .skeleton-line {
 
   .nav-list {
     grid-template-columns: 1fr;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .nav-logout {
+    margin-top: 0;
   }
 
   .content-shell {
