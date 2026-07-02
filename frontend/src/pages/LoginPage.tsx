@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { FormField } from '../components/FormField';
+import { PasswordInput } from '../components/PasswordInput';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
@@ -60,9 +61,8 @@ export function LoginPage() {
           </FormField>
 
           <FormField label="Password">
-            <input
+            <PasswordInput
               value={password}
-              type="password"
               autoComplete="current-password"
               onChange={(event) => setPassword(event.target.value)}
               disabled={submitting}
