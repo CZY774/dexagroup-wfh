@@ -248,6 +248,7 @@ Paginated endpoints return:
 5. Log out from HRD admin.
 6. Log in as the employee.
 7. Submit WFH attendance with a JPEG, PNG, or WEBP proof photo and browser location permission. Supported mobile browsers may open the device camera from the uploader.
+   - Modern Android camera photos can be large, often around 6-12 MB. The frontend compresses supported proof photos before upload and targets about 1.5 MB so the backend 2 MB upload limit remains a safety boundary instead of a normal user blocker.
 8. Confirm the employee history screen shows the new record.
 9. Log back in as HRD admin.
 10. Confirm the monitoring screen shows the employee attendance record.
@@ -275,6 +276,8 @@ MySQL is used because the test explicitly prefers MySQL or Oracle, and MySQL giv
 NestJS TCP transport is used between the gateway and services. This shows a real NestJS microservices concept without adding RabbitMQ, Kafka, or Kubernetes complexity that is not justified for a 3 to 5 day technical test.
 
 Proof photos are stored by `attendance-service` through a small storage abstraction. Docker development uses local disk at `/app/uploads/attendance` backed by the `attendance_uploads` Docker named volume, so normal local restarts keep uploaded proof photos. Production must use S3-compatible object storage such as Railway Bucket through `PROOF_STORAGE_DRIVER=s3`; local container filesystem is not acceptable for production proof photos because a redeploy or restart can remove files while MySQL metadata remains.
+
+Proof photos selected from the frontend are optimized before upload. The client accepts JPEG, PNG, and WEBP, rejects extreme inputs above 12 MB, progressively resizes and re-encodes supported images to JPEG, and targets about 1.5 MB. The API Gateway and attendance-service still enforce the 2 MB `MAX_UPLOAD_BYTES` backend limit and validate MIME/content signature. Compression is a usability and bandwidth optimization, not a security control.
 
 In production, the intended data split is:
 
