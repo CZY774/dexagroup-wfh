@@ -147,7 +147,7 @@ export class AttendanceService {
       throw this.forbidden('You are not allowed to access this proof photo.');
     }
 
-    const fileBuffer = await this.proofStorage.get(record.proofPath);
+    const fileBuffer = await this.readProofFile(record.proofPath);
 
     return {
       filename: record.storedFilename,
@@ -174,6 +174,18 @@ export class AttendanceService {
 
   private async removePersistedProof(relativePath: string): Promise<void> {
     await this.proofStorage.delete(relativePath).catch(() => undefined);
+  }
+
+  private async readProofFile(relativePath: string): Promise<Buffer> {
+    try {
+      return await this.proofStorage.get(relativePath);
+    } catch (error) {
+      if (this.isMissingProofError(error)) {
+        throw this.notFound('Proof photo file was not found.');
+      }
+
+      throw error;
+    }
   }
 
   private validateProof(file: UploadedProofPayload) {
@@ -310,6 +322,20 @@ export class AttendanceService {
 
   private isDuplicateError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'ER_DUP_ENTRY';
+  }
+
+  private isMissingProofError(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const candidate = error as { code?: string; message?: string; status?: number; statusCode?: number };
+    return (
+      candidate.code === 'ENOENT' ||
+      candidate.status === 404 ||
+      candidate.statusCode === 404 ||
+      /NoSuchKey|not found|status 404/i.test(candidate.message ?? '')
+    );
   }
 
   private badRequest(message: string): RpcException {
