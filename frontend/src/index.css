@@ -415,6 +415,10 @@ a:focus-visible {
   gap: 12px;
 }
 
+.photo-meta {
+  margin-top: -4px;
+}
+
 .photo-drop {
   position: relative;
   min-height: 116px;
