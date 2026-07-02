@@ -3,6 +3,7 @@ import { Edit2, Plus, Save, UserCheck, UserX } from 'lucide-react';
 import { DataTable } from '../components/DataTable';
 import { FormField } from '../components/FormField';
 import { PaginationControls } from '../components/PaginationControls';
+import { PasswordInput } from '../components/PasswordInput';
 import { StatusBadge } from '../components/StatusBadge';
 import { api } from '../lib/api';
 import type { EmployeeSummary, PaginationMeta } from '../types/api';
@@ -203,9 +204,8 @@ export function AdminEmployeesPage() {
             </FormField>
             {!editingEmployee && (
               <FormField label="Initial Password">
-                <input
+                <PasswordInput
                   value={form.password}
-                  type="password"
                   minLength={8}
                   onChange={(event) => updateField('password', event.target.value)}
                   disabled={saving}
