@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { rm } from 'node:fs/promises';
+import { rm, unlink } from 'node:fs/promises';
+import path from 'node:path';
 import test from 'node:test';
 import { RpcException } from '@nestjs/microservices';
 import { EmployeeSummary, UserRole } from '@dexa/contracts';
@@ -282,6 +283,36 @@ test('attendance-service limits proof access to the owner or HRD admin', async (
       }),
       (error) => {
         assert.equal(rpcPayload(error).statusCode, 403);
+        return true;
+      },
+    );
+  } finally {
+    await cleanup();
+  }
+});
+
+test('attendance-service returns a clean not found error when proof file is missing', async () => {
+  const { service, rows, uploadDir, cleanup } = createService();
+  try {
+    const record = await service.submit({
+      authUserId: 'user-1',
+      employee: createEmployee(),
+      file: createProof(),
+      location: createLocation(),
+    });
+
+    await unlink(path.join(uploadDir, rows[0].proofPath));
+
+    await assert.rejects(
+      service.getProof({
+        id: record.id,
+        requesterAuthUserId: 'user-1',
+        requesterRole: UserRole.EMPLOYEE,
+      }),
+      (error) => {
+        const payload = rpcPayload(error);
+        assert.equal(payload.statusCode, 404);
+        assert.equal(payload.message, 'Proof photo file was not found.');
         return true;
       },
     );
