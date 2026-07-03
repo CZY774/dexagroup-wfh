@@ -26,4 +26,8 @@ export class AuthGatewayService {
   setUserActive(payload: { userId: string; active: boolean }): Promise<PublicUser> {
     return sendRpc<PublicUser>(this.authClient, AUTH_PATTERNS.SET_USER_ACTIVE, payload);
   }
+
+  deleteUser(payload: { userId: string }): Promise<void> {
+    return sendRpc<void>(this.authClient, AUTH_PATTERNS.DELETE_USER, payload);
+  }
 }
