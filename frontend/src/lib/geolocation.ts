@@ -1,7 +1,7 @@
 import type { AttendanceLocationInput } from '../types/api';
 
 const REQUIRED_ACCURACY_METERS = 500;
-const MAX_CAPTURE_DURATION_MS = 12_000;
+const MAX_CAPTURE_DURATION_MS = 5_000;
 const GEOLOCATION_PERMISSION_DENIED = 1;
 
 export async function captureAttendanceLocation(): Promise<AttendanceLocationInput> {
@@ -78,7 +78,7 @@ export async function captureAttendanceLocation(): Promise<AttendanceLocationInp
         {
           enableHighAccuracy: true,
           maximumAge: 0,
-          timeout: 10_000,
+          timeout: 4_000,
         },
       );
     } catch {
