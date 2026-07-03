@@ -153,13 +153,15 @@ export const api = {
       method: 'PATCH',
     });
   },
-  submitAttendance(payload: { photo: File; notes?: string; location: AttendanceLocationInput }) {
+  submitAttendance(payload: { photo: File; notes?: string; location?: AttendanceLocationInput | null }) {
     const body = new FormData();
     body.append('photo', payload.photo);
-    body.append('latitude', String(payload.location.latitude));
-    body.append('longitude', String(payload.location.longitude));
-    body.append('accuracyMeters', String(payload.location.accuracyMeters));
-    body.append('locationCapturedAt', payload.location.capturedAt);
+    if (payload.location) {
+      body.append('latitude', String(payload.location.latitude));
+      body.append('longitude', String(payload.location.longitude));
+      body.append('accuracyMeters', String(payload.location.accuracyMeters));
+      body.append('locationCapturedAt', payload.location.capturedAt);
+    }
     if (payload.notes) {
       body.append('notes', payload.notes);
     }
