@@ -40,7 +40,7 @@ test('employees controller DELETE soft-deletes employee and deactivates auth use
   } as EmployeeGatewayService;
 
   const controller = new EmployeesController(authGateway, employeeGateway);
-  const result = await controller.delete('employee-1');
+  const result = await controller.delete('employee-1', { sub: 'admin-1', email: 'admin@dexa.test', role: UserRole.HRD_ADMIN });
 
   assert.equal(result.active, false);
   assert.deepEqual(calls, ['employee:employee-1', 'auth:user-1:false']);
@@ -81,7 +81,7 @@ test('employees controller PATCH activate reactivates employee and auth user', a
   } as EmployeeGatewayService;
 
   const controller = new EmployeesController(authGateway, employeeGateway);
-  const result = await controller.activate('employee-1');
+  const result = await controller.activate('employee-1', { sub: 'admin-1', email: 'admin@dexa.test', role: UserRole.HRD_ADMIN });
 
   assert.equal(result.active, true);
   assert.deepEqual(calls, ['employee:employee-1', 'auth:user-1:true']);
@@ -132,7 +132,7 @@ test('employees controller rolls back employee deactivate when auth deactivation
 
   const controller = new EmployeesController(authGateway, employeeGateway);
 
-  await assert.rejects(controller.delete('employee-1'), /auth unavailable/);
+  await assert.rejects(controller.delete('employee-1', { sub: 'admin-1', email: 'admin@dexa.test', role: UserRole.HRD_ADMIN }), /auth unavailable/);
   assert.deepEqual(calls, ['employee-deactivate:employee-1', 'auth:user-1:false', 'employee-activate:employee-1']);
 });
 
@@ -181,6 +181,6 @@ test('employees controller rolls back employee activate when auth reactivation f
 
   const controller = new EmployeesController(authGateway, employeeGateway);
 
-  await assert.rejects(controller.activate('employee-1'), /auth unavailable/);
+  await assert.rejects(controller.activate('employee-1', { sub: 'admin-1', email: 'admin@dexa.test', role: UserRole.HRD_ADMIN }), /auth unavailable/);
   assert.deepEqual(calls, ['employee-activate:employee-1', 'auth:user-1:true', 'employee-deactivate:employee-1']);
 });
