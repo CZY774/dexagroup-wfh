@@ -442,6 +442,12 @@ a:focus-visible {
   border-left-color: var(--success);
 }
 
+.alert.is-warning {
+  color: var(--warning-text);
+  background: var(--warning-soft);
+  border-left-color: var(--warning-text);
+}
+
 .photo-uploader {
   display: grid;
   gap: 12px;
