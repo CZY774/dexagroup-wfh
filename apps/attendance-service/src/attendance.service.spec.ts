@@ -92,11 +92,12 @@ function matches(row: AttendanceRecord, where: Partial<AttendanceRecord>): boole
   return Object.entries(where).every(([key, value]) => row[key as keyof AttendanceRecord] === value);
 }
 
-function createService(initialRows: AttendanceRecord[] = []) {
+function createService(initialRows: AttendanceRecord[] = [], environment: { requireLocation?: boolean } = {}) {
   const uploadDir = `/tmp/dexa-attendance-test-${randomUUID()}`;
   process.env.UPLOAD_DIR = uploadDir;
   process.env.MAX_UPLOAD_BYTES = '2097152';
   process.env.APP_TIMEZONE = 'Asia/Jakarta';
+  process.env.REQUIRE_ATTENDANCE_LOCATION = environment.requireLocation ? 'true' : 'false';
   const { repository, rows } = createRepository(initialRows);
   return {
     rows,
@@ -128,6 +129,49 @@ test('attendance-service submits attendance with a valid proof photo', async () 
     assert.equal(result.longitude, 106.84513);
     assert.equal(result.accuracyMeters, 35);
     assert.equal(rows.length, 1);
+  } finally {
+    await cleanup();
+  }
+});
+
+test('attendance-service submits attendance when location is unavailable', async () => {
+  const { service, rows, cleanup } = createService();
+  try {
+    const result = await service.submit({
+      authUserId: 'user-1',
+      employee: createEmployee(),
+      file: createProof(),
+      location: null,
+      notes: 'WFH today',
+    });
+
+    assert.equal(result.id, 'attendance-1');
+    assert.equal(result.employeeId, 'employee-1');
+    assert.equal(result.latitude, null);
+    assert.equal(result.longitude, null);
+    assert.equal(result.accuracyMeters, null);
+    assert.equal(result.locationCapturedAt, null);
+    assert.equal(rows.length, 1);
+  } finally {
+    await cleanup();
+  }
+});
+
+test('attendance-service can require location by configuration', async () => {
+  const { service, cleanup } = createService([], { requireLocation: true });
+  try {
+    await assert.rejects(
+      service.submit({
+        authUserId: 'user-1',
+        employee: createEmployee(),
+        file: createProof(),
+        location: null,
+      }),
+      (error) => {
+        assert.equal(rpcPayload(error).statusCode, 400);
+        return true;
+      },
+    );
   } finally {
     await cleanup();
   }
@@ -225,7 +269,7 @@ test('attendance-service rejects invalid proof MIME type and oversized uploads',
   }
 });
 
-test('attendance-service requires accurate submission location', async () => {
+test('attendance-service rejects invalid submitted location', async () => {
   const { service, cleanup } = createService();
   try {
     await assert.rejects(
