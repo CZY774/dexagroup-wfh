@@ -8,11 +8,13 @@ import type { AttendanceSummary } from '../types/api';
 import { formatDateTime } from '../lib/format';
 
 type SubmissionStep = 'idle' | 'locating' | 'uploading';
+const LOCATION_UNAVAILABLE_MESSAGE = 'Location was not attached. Attendance was submitted with photo proof and server time.';
 
 export function EmployeeAttendancePage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [success, setSuccess] = useState<AttendanceSummary | null>(null);
   const [submissionStep, setSubmissionStep] = useState<SubmissionStep>('idle');
 
@@ -21,6 +23,7 @@ export function EmployeeAttendancePage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setNotice(null);
     setSuccess(null);
 
     if (!photo) {
@@ -30,10 +33,13 @@ export function EmployeeAttendancePage() {
 
     setSubmissionStep('locating');
     try {
-      const location = await captureAttendanceLocation();
+      const location = await captureAttendanceLocation().catch(() => null);
       setSubmissionStep('uploading');
       const record = await api.submitAttendance({ photo, notes, location });
       setSuccess(record);
+      if (!location) {
+        setNotice(LOCATION_UNAVAILABLE_MESSAGE);
+      }
       setPhoto(null);
       setNotes('');
     } catch (submitError) {
@@ -61,6 +67,7 @@ export function EmployeeAttendancePage() {
         <span className="form-note">{notes.length}/500 characters</span>
 
         {error && <div className="alert is-error" role="alert">{error}</div>}
+        {notice && <div className="alert is-warning" role="status">{notice}</div>}
         {success && <div className="alert is-success" role="status">Submitted at {formatDateTime(success.submittedAt)}</div>}
 
         <button className="primary-button" type="submit" disabled={submitting}>
