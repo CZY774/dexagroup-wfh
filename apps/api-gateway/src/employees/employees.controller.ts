@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { UserRole } from '@dexa/contracts';
+import { JwtPrincipal, UserRole } from '@dexa/contracts';
 import { AuthGatewayService } from '../auth/auth-gateway.service';
+import { CurrentUser } from '../common/current-user.decorator';
 import { JwtAuthGuard } from '../common/jwt-auth.guard';
 import { parsePaginationQuery } from '../common/pagination';
 import { Roles } from '../common/roles.decorator';
@@ -39,7 +40,7 @@ export class EmployeesController {
       });
     } catch (error) {
       if (createdUserId) {
-        await this.authGateway.setUserActive({ userId: createdUserId, active: false }).catch(() => undefined);
+        await this.authGateway.deleteUser({ userId: createdUserId }).catch(() => undefined);
       }
 
       throw error;
@@ -57,7 +58,7 @@ export class EmployeesController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateEmployeeDto) {
+  async update(@Param('id') id: string, @Body() dto: UpdateEmployeeDto, @CurrentUser() user: JwtPrincipal) {
     const current = await this.employeeGateway.getById(id);
     const nextEmail = dto.email?.trim().toLowerCase();
     const shouldUpdateAuthEmail = Boolean(nextEmail && nextEmail !== current.email);
@@ -73,6 +74,7 @@ export class EmployeesController {
       return await this.employeeGateway.update({
         id,
         ...dto,
+        updatedBy: user.sub,
       });
     } catch (error) {
       if (shouldUpdateAuthEmail) {
@@ -87,20 +89,20 @@ export class EmployeesController {
   }
 
   @Patch(':id/deactivate')
-  async deactivate(@Param('id') id: string) {
-    return this.softDelete(id);
+  async deactivate(@Param('id') id: string, @CurrentUser() user: JwtPrincipal) {
+    return this.softDelete(id, user.sub);
   }
 
   @Patch(':id/activate')
-  async activate(@Param('id') id: string) {
-    const employee = await this.employeeGateway.activate(id);
+  async activate(@Param('id') id: string, @CurrentUser() user: JwtPrincipal) {
+    const employee = await this.employeeGateway.activate(id, user.sub);
     try {
       await this.authGateway.setUserActive({
         userId: employee.authUserId,
         active: true,
       });
     } catch (error) {
-      await this.employeeGateway.deactivate(id).catch(() => undefined);
+      await this.employeeGateway.deactivate(id, user.sub).catch(() => undefined);
       throw error;
     }
 
@@ -108,19 +110,19 @@ export class EmployeesController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.softDelete(id);
+  async delete(@Param('id') id: string, @CurrentUser() user: JwtPrincipal) {
+    return this.softDelete(id, user.sub);
   }
 
-  private async softDelete(id: string) {
-    const employee = await this.employeeGateway.deactivate(id);
+  private async softDelete(id: string, updatedBy: string) {
+    const employee = await this.employeeGateway.deactivate(id, updatedBy);
     try {
       await this.authGateway.setUserActive({
         userId: employee.authUserId,
         active: false,
       });
     } catch (error) {
-      await this.employeeGateway.activate(id).catch(() => undefined);
+      await this.employeeGateway.activate(id, updatedBy).catch(() => undefined);
       throw error;
     }
 
