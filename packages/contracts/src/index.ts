@@ -28,6 +28,7 @@ export type EmployeeSummary = {
   position: string;
   phoneNumber: string | null;
   active: boolean;
+  updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -92,6 +93,7 @@ export const AUTH_PATTERNS = {
   CREATE_EMPLOYEE_USER: 'auth.createEmployeeUser',
   UPDATE_USER_EMAIL: 'auth.updateUserEmail',
   SET_USER_ACTIVE: 'auth.setUserActive',
+  DELETE_USER: 'auth.deleteUser',
 } as const;
 
 export const EMPLOYEE_PATTERNS = {
