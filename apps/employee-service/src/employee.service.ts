@@ -17,6 +17,7 @@ type CreateEmployeePayload = {
 
 type UpdateEmployeePayload = Partial<Omit<CreateEmployeePayload, 'authUserId'>> & {
   id: string;
+  updatedBy?: string;
 };
 
 @Injectable()
@@ -124,26 +125,32 @@ export class EmployeeService {
       employee.phoneNumber = payload.phoneNumber?.trim() || null;
     }
 
+    if (payload.updatedBy) {
+      employee.updatedBy = payload.updatedBy;
+    }
+
     return this.toSummary(await this.employees.save(employee));
   }
 
-  async deactivate(id: string): Promise<EmployeeSummary> {
+  async deactivate(id: string, updatedBy?: string): Promise<EmployeeSummary> {
     const employee = await this.employees.findOne({ where: { id } });
     if (!employee) {
       throw this.notFound('Employee was not found.');
     }
 
     employee.active = false;
+    if (updatedBy) employee.updatedBy = updatedBy;
     return this.toSummary(await this.employees.save(employee));
   }
 
-  async activate(id: string): Promise<EmployeeSummary> {
+  async activate(id: string, updatedBy?: string): Promise<EmployeeSummary> {
     const employee = await this.employees.findOne({ where: { id } });
     if (!employee) {
       throw this.notFound('Employee was not found.');
     }
 
     employee.active = true;
+    if (updatedBy) employee.updatedBy = updatedBy;
     return this.toSummary(await this.employees.save(employee));
   }
 
@@ -190,6 +197,7 @@ export class EmployeeService {
       position: employee.position,
       phoneNumber: employee.phoneNumber,
       active: employee.active,
+      updatedBy: employee.updatedBy ?? null,
       createdAt: employee.createdAt.toISOString(),
       updatedAt: employee.updatedAt.toISOString(),
     };
