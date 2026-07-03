@@ -22,7 +22,7 @@ type SubmitAttendancePayload = {
     mimeType: string;
     fileSize: number;
   };
-  location: AttendanceLocationInput;
+  location?: AttendanceLocationInput | null;
   notes?: string | null;
 };
 
