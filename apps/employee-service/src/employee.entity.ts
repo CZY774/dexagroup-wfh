@@ -39,6 +39,9 @@ export class Employee {
   @Column({ default: true })
   active!: boolean;
 
+  @Column({ name: 'updated_by', type: 'varchar', length: 36, nullable: true })
+  updatedBy!: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
