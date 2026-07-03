@@ -31,4 +31,9 @@ export class AuthController {
   setUserActive(@Payload() payload: { userId: string; active: boolean }) {
     return this.authService.setUserActive(payload);
   }
+
+  @MessagePattern(AUTH_PATTERNS.DELETE_USER)
+  deleteUser(@Payload() payload: { userId: string }) {
+    return this.authService.deleteUser(payload);
+  }
 }
