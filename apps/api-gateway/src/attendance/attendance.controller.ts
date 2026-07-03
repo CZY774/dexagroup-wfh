@@ -150,10 +150,24 @@ export class AttendanceController {
     response.send(Buffer.from(proof.base64, 'base64'));
   }
 
-  private parseLocation(dto: SubmitAttendanceDto): AttendanceLocationInput {
-    const latitude = Number(dto.latitude);
-    const longitude = Number(dto.longitude);
-    const accuracyMeters = Number(dto.accuracyMeters);
+  private parseLocation(dto: SubmitAttendanceDto): AttendanceLocationInput | null {
+    const locationFields = [dto.latitude, dto.longitude, dto.accuracyMeters, dto.locationCapturedAt];
+    const providedFieldCount = locationFields.filter((value) => value !== undefined && value !== '').length;
+    if (providedFieldCount === 0) {
+      return null;
+    }
+
+    if (providedFieldCount !== locationFields.length) {
+      throw new BadRequestException('Location fields must be submitted together.');
+    }
+
+    const latitudeInput = dto.latitude as string;
+    const longitudeInput = dto.longitude as string;
+    const accuracyInput = dto.accuracyMeters as string;
+    const capturedAt = dto.locationCapturedAt as string;
+    const latitude = Number(latitudeInput);
+    const longitude = Number(longitudeInput);
+    const accuracyMeters = Number(accuracyInput);
 
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
       throw new BadRequestException('Latitude must be between -90 and 90.');
@@ -171,7 +185,7 @@ export class AttendanceController {
       latitude,
       longitude,
       accuracyMeters,
-      capturedAt: dto.locationCapturedAt,
+      capturedAt,
     };
   }
 }
