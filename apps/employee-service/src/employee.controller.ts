@@ -38,12 +38,12 @@ export class EmployeeController {
   }
 
   @MessagePattern(EMPLOYEE_PATTERNS.DEACTIVATE)
-  deactivate(@Payload() payload: { id: string }) {
-    return this.employeeService.deactivate(payload.id);
+  deactivate(@Payload() payload: { id: string; updatedBy?: string }) {
+    return this.employeeService.deactivate(payload.id, payload.updatedBy);
   }
 
   @MessagePattern(EMPLOYEE_PATTERNS.ACTIVATE)
-  activate(@Payload() payload: { id: string }) {
-    return this.employeeService.activate(payload.id);
+  activate(@Payload() payload: { id: string; updatedBy?: string }) {
+    return this.employeeService.activate(payload.id, payload.updatedBy);
   }
 }
