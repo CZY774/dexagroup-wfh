@@ -15,6 +15,7 @@ type CreateEmployeePayload = {
 
 type UpdateEmployeePayload = Partial<Omit<CreateEmployeePayload, 'authUserId'>> & {
   id: string;
+  updatedBy?: string;
 };
 
 @Injectable()
@@ -45,11 +46,11 @@ export class EmployeeGatewayService {
     return sendRpc<EmployeeSummary>(this.employeeClient, EMPLOYEE_PATTERNS.UPDATE, payload);
   }
 
-  deactivate(id: string): Promise<EmployeeSummary> {
-    return sendRpc<EmployeeSummary>(this.employeeClient, EMPLOYEE_PATTERNS.DEACTIVATE, { id });
+  deactivate(id: string, updatedBy: string): Promise<EmployeeSummary> {
+    return sendRpc<EmployeeSummary>(this.employeeClient, EMPLOYEE_PATTERNS.DEACTIVATE, { id, updatedBy });
   }
 
-  activate(id: string): Promise<EmployeeSummary> {
-    return sendRpc<EmployeeSummary>(this.employeeClient, EMPLOYEE_PATTERNS.ACTIVATE, { id });
+  activate(id: string, updatedBy: string): Promise<EmployeeSummary> {
+    return sendRpc<EmployeeSummary>(this.employeeClient, EMPLOYEE_PATTERNS.ACTIVATE, { id, updatedBy });
   }
 }
