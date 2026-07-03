@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS employees (
   position varchar(120) NOT NULL,
   phone_number varchar(40) NULL,
   active tinyint NOT NULL DEFAULT 1,
+  updated_by varchar(36) NULL,
   created_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
