@@ -118,6 +118,10 @@ export class AuthService implements OnModuleInit {
     return this.toPublicUser(await this.users.save(user));
   }
 
+  async deleteUser(payload: { userId: string }): Promise<void> {
+    await this.users.delete({ id: payload.userId });
+  }
+
   private async seedAdmin() {
     const adminEmail = (process.env.ADMIN_EMAIL ?? 'admin@dexa.test').trim().toLowerCase();
     const existing = await this.users.findOne({ where: { email: adminEmail } });
