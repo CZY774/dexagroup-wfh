@@ -28,7 +28,7 @@ type SubmitAttendancePayload = {
   authUserId: string;
   employee: EmployeeSummary;
   file: UploadedProofPayload;
-  location: AttendanceLocationInput;
+  location?: AttendanceLocationInput | null;
   notes?: string | null;
 };
 
@@ -45,6 +45,7 @@ type ListAllPayload = PaginationInput & {
 export class AttendanceService {
   private readonly maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES ?? 2_097_152);
   private readonly maxLocationAccuracyMeters = resolvePositiveNumber(process.env.MAX_LOCATION_ACCURACY_METERS, 500);
+  private readonly requireLocation = resolveBoolean(process.env.REQUIRE_ATTENDANCE_LOCATION, false);
   private readonly timezone = process.env.APP_TIMEZONE ?? 'Asia/Jakarta';
   private readonly proofStorage = createProofStorage();
 
@@ -62,7 +63,10 @@ export class AttendanceService {
     this.validateProof(payload.file);
 
     const now = new Date();
-    const location = this.validateLocation(payload.location, now);
+    const location = payload.location ? this.validateLocation(payload.location, now) : null;
+    if (!location && this.requireLocation) {
+      throw this.badRequest('Location is required for attendance submission.');
+    }
     const attendanceDate = this.getBusinessDate(now);
     const existing = await this.records.findOne({
       where: {
@@ -87,10 +91,10 @@ export class AttendanceService {
       mimeType: payload.file.mimeType,
       fileSize: payload.file.fileSize,
       notes: this.normalizeNotes(payload.notes),
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracyMeters: location.accuracyMeters,
-      locationCapturedAt: location.capturedAt,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
+      accuracyMeters: location?.accuracyMeters ?? null,
+      locationCapturedAt: location?.capturedAt ?? null,
     });
 
     try {
@@ -213,11 +217,7 @@ export class AttendanceService {
     }
   }
 
-  private validateLocation(location: AttendanceLocationInput | undefined, submittedAt: Date) {
-    if (!location) {
-      throw this.badRequest('Location is required for attendance submission.');
-    }
-
+  private validateLocation(location: AttendanceLocationInput, submittedAt: Date) {
     const latitude = Number(location.latitude);
     const longitude = Number(location.longitude);
     const accuracyMeters = Number(location.accuracyMeters);
@@ -358,4 +358,12 @@ export class AttendanceService {
 function resolvePositiveNumber(value: string | undefined, fallback: number): number {
   const parsed = Number(value ?? fallback);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function resolveBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
