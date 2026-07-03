@@ -9,21 +9,25 @@ export class SubmitAttendanceDto {
   notes?: string;
 
   @TrimString()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  latitude!: string;
+  latitude?: string;
 
   @TrimString()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  longitude!: string;
+  longitude?: string;
 
   @TrimString()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  accuracyMeters!: string;
+  accuracyMeters?: string;
 
   @TrimString()
+  @IsOptional()
   @IsISO8601()
-  locationCapturedAt!: string;
+  locationCapturedAt?: string;
 }
